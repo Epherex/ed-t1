@@ -3,21 +3,29 @@
 #include <stdlib.h>
 
 #include "file_util.h"
+#include "object.h"
+#include "geometry.h"
+#include "tree.h"
 
 double clamp(double valor, double a, double b) {
 	double clampado = valor > b ? b : valor;
-	clampado = valor < a ? a : valor;
+	clampado = valor < a ? a : clampado;
 	return clampado;
 }
 
 int main(int argc, char *argv[]) {
+	BinaryTree objectTree;
+
 	char *baseDir = NULL;
-	char *entryFilePath = NULL;
-	char *queryFilePath = NULL;
+	char *entryFileName = NULL;
+	char *queryFileName = NULL;
 	char *outputDir = NULL;
+	char *outputSVGFileName = NULL;
 
 	FILE *entryFile = NULL;
+	FILE *outputSVGFile = NULL;
 
+	// Processamento dos argumentos passados ao programa
 	for(int i = 1; i < argc; i++) {
 		if(strcmp("-e", argv[i]) == 0) {
 			if(++i >= argc) {
@@ -34,21 +42,21 @@ int main(int argc, char *argv[]) {
 				printf("O argumento '-f' requer o nome de um arquivo!\n");
 				return 1;
 			}
-			if(entryFilePath != NULL) {
-				free(entryFilePath);
+			if(entryFileName != NULL) {
+				free(entryFileName);
 			}
-			entryFilePath = malloc((strlen(argv[i]) + 1) * sizeof(char));
-			strcpy(entryFilePath, argv[i]);
+			entryFileName = malloc((strlen(argv[i]) + 1) * sizeof(char));
+			strcpy(entryFileName, argv[i]);
 		} else if(strcmp("-q", argv[i]) == 0) {
 			if(++i >= argc) {
 				printf("O argumento '-q' requer o nome de um arquivo!\n");
 				return 1;
 			}
-			if(queryFilePath != NULL) {
-				free(queryFilePath);
+			if(queryFileName != NULL) {
+				free(queryFileName);
 			}
-			queryFilePath = malloc((strlen(argv[i]) + 1) * sizeof(char));
-			strcpy(queryFilePath, argv[i]);
+			queryFileName = malloc((strlen(argv[i]) + 1) * sizeof(char));
+			strcpy(queryFileName, argv[i]);
 		} else if(strcmp("-o", argv[i]) == 0) {
 			if(++i >= argc) {
 				printf("O argumento '-o' requer um diretório!\n");
@@ -65,18 +73,33 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if(entryFilePath == NULL) {
+	// Verificação se os argumentos obrigatórios foram passados
+	if(entryFileName == NULL) {
 		printf("O argumento '-f' é obrigatório!\n");
 		return 1;
 	}
-
 	if(outputDir == NULL) {
 		printf("O argumento '-o' é obrigatório!\n");
 		return 1;
 	}
 
-	entryFile = openFile(baseDir, entryFilePath);
+	outputSVGFileName = malloc((strlen(entryFileName) + 3) * sizeof(char));
+	strcpy(outputSVGFileName, entryFileName);
+	changeExtension(outputSVGFileName, "svg");
 
-	printf("oi\n");
+	// Abertura dos arquivos
+	entryFile = openFile(baseDir, entryFileName, "r");
+	if(entryFile == NULL) {
+		return 1;
+	}
+	outputSVGFile = openFile(outputDir, outputSVGFileName, "w");
+	if(outputSVGFile == NULL) {
+		return 1;
+	}
+
+	processGeometry(entryFile, outputSVGFile, &objectTree);
+	
+	fclose(entryFile);
+	fclose(outputSVGFile);
 
 }

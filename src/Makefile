@@ -1,14 +1,11 @@
 CC = gcc
 COMPILER_FLAGS = -std=c99
 LINKER_FLAGS = -lm
-OBJ_NAME = siguel
+EXEC_NAME = siguel
+OBJECTS = main.o geometry.o object.o file_util.o tree.o svg.o
 
+all: $(OBJECTS)
+	$(CC) $(OBJECTS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(EXEC_NAME)
 
-all: main.o file_util.o
-	$(CC) main.o file_util.o $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
-
-main.o: main.c
-	$(CC) -c main.c
-
-file_util.o: file_util.c file_util.h
-	$(CC) -c file_util.c
+clean:
+	rm -rf *.o

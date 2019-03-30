@@ -1,6 +1,6 @@
 #include "file_util.h"
 
-FILE *openFile(char *baseDir, char *path) {
+FILE *openFile(char *baseDir, char *path, char *flags) {
     char *fullPath;
     int len = strlen(path) + 2;
     if(baseDir != NULL)
@@ -16,10 +16,23 @@ FILE *openFile(char *baseDir, char *path) {
         strcpy(fullPath, path);
     }
     printf("%s\n", fullPath);
-    FILE *newFile = fopen(fullPath, "r");
+    FILE *newFile = fopen(fullPath, flags);
     if(newFile == NULL) {
-        perror("Erro ao ler arquivo");
-        exit(1);
+        char stringErro[128];
+        sprintf(stringErro, "Erro ao ler arquivo '%s'", fullPath);
+        perror(stringErro);
     }
     return newFile;
+}
+
+void changeExtension(char *filePath, char *newExtension) {
+    int index = strlen(filePath) - 1;
+
+    while(index >= 0 && filePath[index] != '.')
+        index--;
+    
+    if(index < 0)
+        sprintf(filePath, "%s.%s", filePath, newExtension);
+    else
+        strcpy(filePath + index + 1, newExtension);
 }
