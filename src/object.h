@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 
 typedef enum ObjectType {
     OBJ_CIRC,
@@ -13,6 +14,7 @@ typedef struct Object {
     void *content;
     ObjectType type;
     int id;
+    char color1[16], color2[16];
 } Object;
 
 typedef struct Circle {
@@ -23,22 +25,10 @@ typedef struct Rectangle {
     double x, y, width, height;
 } Rectangle;
 
-Object *createCircle(int id, double radius, double x, double y);
+Object *createCircle(int id, double radius, double x, double y, char color1[], char color2[]);
 
-Object *createRectangle(int id, double width, double height, double x, double y);
+Object *createRectangle(int id, double width, double height, double x, double y, char color1[], char color2[]);
 
 void destroyObject(Object *obj);
-
-double calculateDistance(double x1, double y1, double x2, double y2);
-
-double clamp(double value, double a, double b);
-
-bool checkOverlap(Object *a, Object *b);
-
-bool checkInside(Object *obj, double x, double y);
-
-void getCenter(Object *obj, double *x, double *y);
-
-void getExtremes(Object *obj, double *values);
 
 #endif

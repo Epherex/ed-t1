@@ -12,6 +12,8 @@ void removeExtension(char *filePath);
 
 void changeExtension(char *filePath, char *newExtension);
 
-void putSVGStart(FILE *file);
+void addSuffix(char *filePath, char *suffix);
+
+void removeDirAndExt(char *filePath);
 
 #endif

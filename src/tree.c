@@ -44,3 +44,28 @@ Object *treeFind(BinaryTree *tree, int id) {
     }
     return NULL;
 }
+
+void nodeExecute(Node *node, void (*f)(Object*, void*), void *arg) {
+    if(node != NULL) {
+        nodeExecute(node->left, f, arg);
+        (*f)(node->obj, arg);
+        nodeExecute(node->right, f, arg);
+    }
+}
+
+void treeExecute(BinaryTree *tree, void (*f)(Object*, void*), void *arg) {
+    Node *node = tree->top;
+    nodeExecute(node, f, arg);
+}
+
+void nodeDestroy(Node *node) {
+    if(node != NULL) {
+        nodeDestroy(node->left);
+        nodeDestroy(node->right);
+        free(node);
+    }
+}
+
+void treeDestroy(BinaryTree *tree) {
+    nodeDestroy(tree->top);
+}

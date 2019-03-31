@@ -4,7 +4,7 @@
 
 #include "file_util.h"
 #include "object.h"
-#include "geometry.h"
+#include "commands.h"
 #include "tree.h"
 
 int main(int argc, char *argv[]) {
@@ -15,8 +15,6 @@ int main(int argc, char *argv[]) {
 	char *queryFileName = NULL;
 	char *outputDir = NULL;
 	char *outputSVGFileName = NULL;
-	char *outputQrySVGFileName = NULL;
-	char *outputTXTFileName = NULL;
 
 	FILE *entryFile = NULL;
 	FILE *queryFile = NULL;
@@ -86,27 +84,36 @@ int main(int argc, char *argv[]) {
 	strcpy(outputSVGFileName, entryFileName);
 	changeExtension(outputSVGFileName, "svg");
 
-	// Abertura dos arquivos padrão
+	// Abertura do arquivo de entrada padrão
 	entryFile = openFile(baseDir, entryFileName, "r");
 	if(entryFile == NULL) {
 		return 1;
 	}
-	outputSVGFile = openFile(outputDir, outputSVGFileName, "w");
-	if(outputSVGFile == NULL) {
-		return 1;
-	}
+
 	// Abertura dos arquivos referentes à consulta
-	if(queryFileName != NULL) {
-		outputTXTFileName = malloc((strlen(entryFileName) + 4) * sizeof(char));
-		outputQrySVGFileName = malloc((strlen(entryFileName) + 4) * sizeof(char));
+	char outputTXTFileName[64];
+	char outputQrySVGFileName[64];
+	if(queryFileName != NULL) {	
+		queryFile = openFile(baseDir, queryFileName, "r");
+		if(queryFile == NULL)
+			return 1;
+		
 		char noExtName[32];
+		// Copiar nome completo do arquivo de consulta
 		strcpy(noExtName, queryFileName);
-		removeExtension(noExtName);
+		// Remover diretório e extensão
+		removeDirAndExt(noExtName);
+
+		// Copiar nome do arquivo de entrada
 		strcpy(outputTXTFileName, entryFileName);
-		removeExtension(outputTXTFileName);
+		// Adicionar sufixo (que é o nome do arquivo de consulta)
+		addSuffix(outputTXTFileName, noExtName);
+		// Copiar o resultado para o arquivo SVG de consulta
 		strcpy(outputQrySVGFileName, outputTXTFileName);
-		sprintf(outputTXTFileName, "%s-%s.txt", outputTXTFileName, noExtName);
-		sprintf(outputQrySVGFileName, "%s-%s.svg", outputQrySVGFileName, noExtName);
+
+		// Atribuir as extensões correspondentes
+		changeExtension(outputTXTFileName, "txt");
+		changeExtension(outputQrySVGFileName, "svg");
 
 		outputTXTFile = openFile(outputDir, outputTXTFileName, "w");
 		if(outputTXTFile == NULL)
@@ -115,32 +122,35 @@ int main(int argc, char *argv[]) {
 		outputQrySVGFile = openFile(outputDir, outputQrySVGFileName, "w");
 		if(outputQrySVGFile == NULL)
 			return 1;
-
-		queryFile = openFile(baseDir, queryFileName, "r");
-		if(queryFile == NULL)
-			return 1;
-
-		free(outputTXTFileName);
-		free(outputQrySVGFileName);
-		free(queryFileName);
 	}
 
-	if(baseDir != NULL)
-		free(baseDir);
-	free(outputSVGFileName);
-	free(entryFileName);
+	// Abertura do arquivo de saída padrão
+	outputSVGFile = openFile(outputDir, outputSVGFileName, "w");
+	if(outputSVGFile == NULL) {
+		return 1;
+	}
 
+	// Processar comandos do .geo
 	if(!processGeometry(entryFile, outputSVGFile, outputQrySVGFile, &objectTree))
 		return 1;
 
-	if(!processQuery(queryFile, outputQrySVGFile, outputTXTFile, &objectTree))
-		return 1;
+	// Processar comandos do .qry, se houver
+	if(queryFile != NULL)
+		if(!processQuery(queryFile, outputQrySVGFile, outputTXTFile, &objectTree, outputDir, outputQrySVGFileName))
+			return 1;
 	
+	// Limpeza
 	fclose(entryFile);
 	fclose(outputSVGFile);
 	if(queryFile != NULL) {
 		fclose(queryFile);
 		fclose(outputSVGFile);
 		fclose(outputTXTFile);
+		free(queryFileName);
 	}
+	if(baseDir != NULL)
+		free(baseDir);
+	free(outputSVGFileName);
+	free(entryFileName);
+	treeDestroy(&objectTree);
 }

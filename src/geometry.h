@@ -1,16 +1,20 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
-#include <stdio.h>
 #include "object.h"
-#include "tree.h"
-#include "svg.h"
+#include <stdbool.h>
 #include <math.h>
 
-#define DEFAULT_MAXIMUM 1000
+double calculateDistance(double x1, double y1, double x2, double y2);
 
-bool processGeometry(FILE *entryFile, FILE *outputFile, FILE *outputQryFile, BinaryTree *objectTree);
+double clamp(double value, double a, double b);
 
-bool processQuery(FILE *queryFile, FILE *outputFile, FILE *txtFile, BinaryTree *objectTree);
+bool checkOverlap(Object *a, Object *b);
+
+bool checkInside(Object *obj, double x, double y);
+
+void getCenter(Object *obj, double *x, double *y);
+
+void getSurroundingRect(Object *obj, Rectangle *resultRect);
 
 #endif

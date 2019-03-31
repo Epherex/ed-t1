@@ -20,4 +20,8 @@ bool treeInsert(BinaryTree *tree, Object *obj);
 
 Object *treeFind(BinaryTree *tree, int id);
 
+void treeExecute(BinaryTree *tree, void (*f)(Object*, void*), void *arg);
+
+void treeDestroy(BinaryTree *tree);
+
 #endif

@@ -35,5 +35,31 @@ void removeExtension(char *filePath) {
 
 void changeExtension(char *filePath, char *newExtension) {
     removeExtension(filePath);
-    sprintf(filePath, "%s.%s", filePath, newExtension);
+    strcat(filePath, ".");
+    strcat(filePath, newExtension);
+}
+
+void addSuffix(char *filePath, char *suffix) {
+    int index = strlen(filePath) - 1;
+
+    while(index >= 0 && filePath[index] != '.')
+        index--;
+    
+    char extension[16];
+    strcpy(extension, filePath + index);
+    char appendix[64];
+    sprintf(appendix, "-%s%s", suffix, extension);
+    filePath[index] = '\0';
+    strcat(filePath, appendix);
+}
+
+void removeDirAndExt(char *filePath) {
+    removeExtension(filePath);
+    int index = strlen(filePath) - 1;
+
+    while(index >= 0 && filePath[index] != '/')
+        index--;
+
+    if(index >= 0)
+        strcpy(filePath, filePath + index + 1);
 }

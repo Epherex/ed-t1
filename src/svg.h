@@ -7,13 +7,15 @@
 
 #define STROKE_WIDTH "2"
 #define TEXT_FILL_COLOR "black"
-#define POINT_RADIUS 1.0
+#define POINT_RADIUS 2.0
 
 void putSVGStart(FILE *file);
 
 void putSVGCircle(FILE *file, Circle *circ, char color1[], char color2[]);
 
 void putSVGRectangle(FILE *file, Rectangle *rect, char color1[], char color2[]);
+
+void putSVGEllipse(FILE *file, double cx, double cy, double rx, double ry, char color1[], char color2[]);
 
 void putSVGText(FILE *file, double x, double y, char text[]);
 

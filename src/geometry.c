@@ -1,132 +1,81 @@
-#include <string.h>
 #include "geometry.h"
 
-bool processGeometry(FILE *entryFile, FILE *outputFile, FILE *outputQryFile, BinaryTree *objectTree) {
-    int nx = DEFAULT_MAXIMUM;
-
-    objectTree->numElements = 0;
-    objectTree->numMax = nx;
-    objectTree->top = NULL;
-    //*objectsPtr = malloc(nx * sizeof(Object));
-    //Object *objects = *objectsPtr;
-
-    putSVGStart(outputFile);
-    if(outputQryFile != NULL)
-        putSVGStart(outputQryFile);
-
-    char buffer[128];
-    while(fgets(buffer, 128, entryFile) != NULL) {
-        char type[16];
-        sscanf(buffer, "%15s", type);
-        if(strcmp(type, "nx") == 0) {
-            sscanf(buffer + 3, "%d", &nx);
-            //*objectsPtr = realloc(*objectsPtr, nx * sizeof(Object));
-            //objects = *objectsPtr;
-            objectTree->numMax = nx;
-        } else if(strcmp(type, "c") == 0) {
-            int i;
-            double radius, x, y;
-            char color1[32], color2[32];
-            sscanf(buffer + 2, "%d %lf %lf %lf %s %s", &i, &radius, &x, &y, color1, color2);
-            Object *o = createCircle(i, radius, x, y);
-            if(treeInsert(objectTree, o) == false) {
-                printf("Erro: Número máximo de elementos ultrapassado!\n");
-                return false;
-            }
-            putSVGCircle(outputFile, (Circle *) o->content, color1, color2);
-            if(outputQryFile != NULL)
-                putSVGCircle(outputQryFile, (Circle *) o->content, color1, color2);
-        } else if(strcmp(type, "r") == 0) {
-            int i;
-            double width, height, x, y;
-            char color1[32], color2[32];
-            sscanf(buffer + 2, "%d %lf %lf %lf %lf %s %s", &i, &width, &height, &x, &y, color1, color2);
-            Object *o = createRectangle(i, width, height, x, y);
-            if(treeInsert(objectTree, o) == false) {
-                printf("Erro: Número máximo de elementos ultrapassado!\n");
-                return false;
-            }
-            putSVGRectangle(outputFile, (Rectangle *) o->content, color1, color2);
-            if(outputQryFile != NULL)
-                putSVGRectangle(outputQryFile, (Rectangle *) o->content, color1, color2);
-        } else if(strcmp(type, "t") == 0) {
-            double x, y;
-            char text[128];
-            sscanf(buffer + 2, "%lf %lf %128[^\n]", &x, &y, text);
-            putSVGText(outputFile, x, y, text);
-            if(outputQryFile != NULL)
-                putSVGText(outputQryFile, x, y, text);
-        }
-    }
-
-    putSVGEnd(outputFile);
-
-    return true;
+double calculateDistance(double x1, double y1, double x2, double y2) {
+    return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
 }
 
-bool processQuery(FILE *queryFile, FILE *outputFile, FILE *txtFile, BinaryTree *objectTree) {
-    char buffer[128];
-    while(fgets(buffer, 128, queryFile) != NULL) {
-        int len = strlen(buffer);
-        if(buffer[len - 1] != '\n') {
-            buffer[len] = '\n';
-            buffer[len + 1] = '\0';
-        }
-        char type[16];
-        sscanf(buffer, "%15s", type);
-        if(strcmp(type, "o?") == 0) {
-            fputs(buffer, txtFile);
-            int idA, idB;
-            sscanf(buffer + 3, "%d %d", &idA, &idB);
-            Object *a = treeFind(objectTree, idA), *b = treeFind(objectTree, idB);
-            bool overlaps = checkOverlap(a, b);
-            if(overlaps) {
-                fprintf(txtFile, "SIM\n\n");
-            } else {
-                fprintf(txtFile, "NAO\n\n");
-            }
-            double extremesA[4];
-            getExtremes(a, extremesA);
-            double extremesB[4];
-            getExtremes(b, extremesB);
-            double minX = extremesA[0] < extremesB[0] ? extremesA[0] : extremesB[0];
-            double minY = extremesA[1] < extremesB[1] ? extremesA[1] : extremesB[1];
-            double maxX = extremesA[2] < extremesB[2] ? extremesB[2] : extremesA[2];
-            double maxY = extremesA[3] < extremesB[3] ? extremesB[3] : extremesA[3];
-            putSVGBox(outputFile, minX, minY, maxX - minX, maxY - minY, !overlaps);
+double clamp(double value, double a, double b) {
+	double clamped = value > b ? b : value;
+	clamped = value < a ? a : clamped;
+	return clamped;
+}
 
-        } else if(strcmp(type, "i?") == 0) {
-            fputs(buffer, txtFile);
-            int id;
-            double x, y;
-            sscanf(buffer + 3, "%d %lf %lf", &id, &x, &y);
-            Object* o = treeFind(objectTree, id);
-            bool inside = checkInside(o, x, y);
-            if(inside) {
-                fprintf(txtFile, "SIM\n\n");
-            } else {
-                fprintf(txtFile, "NAO\n\n");
-            }
-            double centerX, centerY;
-            getCenter(o, &centerX, &centerY);
-            putSVGLine(outputFile, centerX, centerY, x, y);
-            putSVGPoint(outputFile, x, y, inside);
-        } else if(strcmp(type, "d?") == 0) {
-            fputs(buffer, txtFile);
-            int j, k;
-            sscanf(buffer + 3, "%d %d", &j, &k);
-            double c1x, c1y, c2x, c2y;
-            getCenter(treeFind(objectTree, j), &c1x, &c1y);
-            getCenter(treeFind(objectTree, k), &c2x, &c2y);
-            double dist = calculateDistance(c1x, c1y, c2x, c2y);
-            fprintf(txtFile, "%lf\n\n", dist);
-            putSVGLine(outputFile, c1x, c1y, c2x, c2y);
-            char distText[16];
-            sprintf(distText, "%lf", dist);
-            putSVGText(outputFile, c1x + (c2x - c1x) / 2, c1y + (c2y - c1y) / 2, distText);
-        } else if(strcmp(type, "bb") == 0) {
-
+bool checkOverlap(Object *a, Object *b) {
+    if(a->type == OBJ_CIRC && b->type == OBJ_CIRC) {
+        Circle *c1 = (Circle *) a->content;
+        Circle *c2 = (Circle *) b->content;
+        double dist = calculateDistance(c1->x, c1->y, c2->x, c2->y);
+        return (dist < c1->radius + c2->radius);
+    } else if(a->type == OBJ_RECT && b->type == OBJ_RECT) {
+        Rectangle *r1 = (Rectangle *) a->content;
+        Rectangle *r2 = (Rectangle *) b->content;
+        return r1->x < r2->x + r2->width &&
+               r1->x + r1->width > r2->x &&
+               r1->y < r2->y + r2->height &&
+               r1->y + r1->height > r2->y;
+    } else {
+        // Deixar o a como círculo e b como retângulo
+        if(a->type == OBJ_RECT) {
+            Object *temp = a;
+            a = b;
+            b = temp;
         }
+        Circle *circ = (Circle *) a->content;
+        Rectangle *rect = (Rectangle *) b->content;
+
+        double nearestX = clamp(circ->x, rect->x, rect->x + rect->width);
+        double nearestY = clamp(circ->y, rect->y, rect->y + rect->height);
+
+        double dist = calculateDistance(nearestX, nearestY, circ->x, circ->y);
+
+        return dist < circ->radius;
     }
-    putSVGEnd(outputFile);
+}
+
+bool checkInside(Object *obj, double x, double y) {
+    if(obj->type == OBJ_CIRC) {
+        Circle *circ = (Circle *) obj->content;
+        return calculateDistance(x, y, circ->x, circ->y) < circ->radius;
+    } else {
+        Rectangle *rect = (Rectangle *) obj->content;
+        return x > rect->x && x < rect->x + rect->width && y > rect->y && y < rect->y + rect->height;
+    }
+}
+
+void getCenter(Object *obj, double *x, double *y) {
+    if(obj->type == OBJ_CIRC) {
+        Circle *circ = (Circle *) obj->content;
+        *x = circ->x;
+        *y = circ->y;
+    } else {
+        Rectangle *rect = (Rectangle *) obj->content;
+        *x = rect->x + rect->width/2;
+        *y = rect->y + rect->height/2;
+    }
+}
+
+void getSurroundingRect(Object *obj, Rectangle *resultRect) {
+    if(obj->type == OBJ_CIRC) {
+        Circle *circ = (Circle *) obj->content;
+        resultRect->x = circ->x - circ->radius;
+        resultRect->y = circ->y - circ->radius;
+        resultRect->width = circ->radius * 2;
+        resultRect->height = circ->radius * 2;
+    } else {
+        Rectangle *rect = (Rectangle *) obj->content;
+        resultRect->x = rect->x;
+        resultRect->y = rect->y;
+        resultRect->width = rect->width;
+        resultRect->height = rect->height;
+    }
 }
