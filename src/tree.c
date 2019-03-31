@@ -30,3 +30,17 @@ bool treeInsert(BinaryTree *tree, Object *obj) {
     }
     return true;
 }
+
+Object *treeFind(BinaryTree *tree, int id) {
+    Node *current = tree->top;
+    while(current != NULL) {
+        if(current->obj->id == id) {
+            return current->obj;
+        } else if(id > current->obj->id) {
+            current = current->right;
+        } else {
+            current = current->left;
+        }
+    }
+    return NULL;
+}

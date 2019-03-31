@@ -8,6 +8,8 @@
 
 FILE *openFile(char *baseDir, char *path, char *flags);
 
+void removeExtension(char *filePath);
+
 void changeExtension(char *filePath, char *newExtension);
 
 void putSVGStart(FILE *file);

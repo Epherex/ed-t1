@@ -18,4 +18,6 @@ typedef struct BinaryTree {
 
 bool treeInsert(BinaryTree *tree, Object *obj);
 
+Object *treeFind(BinaryTree *tree, int id);
+
 #endif

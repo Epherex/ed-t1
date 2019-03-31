@@ -7,12 +7,6 @@
 #include "geometry.h"
 #include "tree.h"
 
-double clamp(double valor, double a, double b) {
-	double clampado = valor > b ? b : valor;
-	clampado = valor < a ? a : clampado;
-	return clampado;
-}
-
 int main(int argc, char *argv[]) {
 	BinaryTree objectTree;
 
@@ -21,9 +15,14 @@ int main(int argc, char *argv[]) {
 	char *queryFileName = NULL;
 	char *outputDir = NULL;
 	char *outputSVGFileName = NULL;
+	char *outputQrySVGFileName = NULL;
+	char *outputTXTFileName = NULL;
 
 	FILE *entryFile = NULL;
+	FILE *queryFile = NULL;
 	FILE *outputSVGFile = NULL;
+	FILE *outputQrySVGFile = NULL;
+	FILE *outputTXTFile = NULL;
 
 	// Processamento dos argumentos passados ao programa
 	for(int i = 1; i < argc; i++) {
@@ -83,11 +82,11 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	outputSVGFileName = malloc((strlen(entryFileName) + 3) * sizeof(char));
+	outputSVGFileName = malloc((strlen(entryFileName) + 4) * sizeof(char));
 	strcpy(outputSVGFileName, entryFileName);
 	changeExtension(outputSVGFileName, "svg");
 
-	// Abertura dos arquivos
+	// Abertura dos arquivos padrão
 	entryFile = openFile(baseDir, entryFileName, "r");
 	if(entryFile == NULL) {
 		return 1;
@@ -96,10 +95,52 @@ int main(int argc, char *argv[]) {
 	if(outputSVGFile == NULL) {
 		return 1;
 	}
+	// Abertura dos arquivos referentes à consulta
+	if(queryFileName != NULL) {
+		outputTXTFileName = malloc((strlen(entryFileName) + 4) * sizeof(char));
+		outputQrySVGFileName = malloc((strlen(entryFileName) + 4) * sizeof(char));
+		char noExtName[32];
+		strcpy(noExtName, queryFileName);
+		removeExtension(noExtName);
+		strcpy(outputTXTFileName, entryFileName);
+		removeExtension(outputTXTFileName);
+		strcpy(outputQrySVGFileName, outputTXTFileName);
+		sprintf(outputTXTFileName, "%s-%s.txt", outputTXTFileName, noExtName);
+		sprintf(outputQrySVGFileName, "%s-%s.svg", outputQrySVGFileName, noExtName);
 
-	processGeometry(entryFile, outputSVGFile, &objectTree);
+		outputTXTFile = openFile(outputDir, outputTXTFileName, "w");
+		if(outputTXTFile == NULL)
+			return 1;
+
+		outputQrySVGFile = openFile(outputDir, outputQrySVGFileName, "w");
+		if(outputQrySVGFile == NULL)
+			return 1;
+
+		queryFile = openFile(baseDir, queryFileName, "r");
+		if(queryFile == NULL)
+			return 1;
+
+		free(outputTXTFileName);
+		free(outputQrySVGFileName);
+		free(queryFileName);
+	}
+
+	if(baseDir != NULL)
+		free(baseDir);
+	free(outputSVGFileName);
+	free(entryFileName);
+
+	if(!processGeometry(entryFile, outputSVGFile, outputQrySVGFile, &objectTree))
+		return 1;
+
+	if(!processQuery(queryFile, outputQrySVGFile, outputTXTFile, &objectTree))
+		return 1;
 	
 	fclose(entryFile);
 	fclose(outputSVGFile);
-
+	if(queryFile != NULL) {
+		fclose(queryFile);
+		fclose(outputSVGFile);
+		fclose(outputTXTFile);
+	}
 }

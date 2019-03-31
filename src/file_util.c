@@ -15,24 +15,25 @@ FILE *openFile(char *baseDir, char *path, char *flags) {
     } else {
         strcpy(fullPath, path);
     }
-    printf("%s\n", fullPath);
     FILE *newFile = fopen(fullPath, flags);
     if(newFile == NULL) {
         char stringErro[128];
-        sprintf(stringErro, "Erro ao ler arquivo '%s'", fullPath);
+        sprintf(stringErro, "Erro ao abrir arquivo '%s'", fullPath);
         perror(stringErro);
     }
     return newFile;
 }
 
-void changeExtension(char *filePath, char *newExtension) {
+void removeExtension(char *filePath) {
     int index = strlen(filePath) - 1;
 
     while(index >= 0 && filePath[index] != '.')
         index--;
     
-    if(index < 0)
-        sprintf(filePath, "%s.%s", filePath, newExtension);
-    else
-        strcpy(filePath + index + 1, newExtension);
+    filePath[index] = '\0';
+}
+
+void changeExtension(char *filePath, char *newExtension) {
+    removeExtension(filePath);
+    sprintf(filePath, "%s.%s", filePath, newExtension);
 }
