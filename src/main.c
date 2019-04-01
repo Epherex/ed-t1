@@ -152,5 +152,7 @@ int main(int argc, char *argv[]) {
 		free(baseDir);
 	free(outputSVGFileName);
 	free(entryFileName);
+	if(outputDir != NULL)
+		free(outputDir);
 	treeDestroy(&objectTree);
 }

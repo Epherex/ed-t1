@@ -21,6 +21,7 @@ FILE *openFile(char *baseDir, char *path, char *flags) {
         sprintf(stringErro, "Erro ao abrir arquivo '%s'", fullPath);
         perror(stringErro);
     }
+    free(fullPath);
     return newFile;
 }
 

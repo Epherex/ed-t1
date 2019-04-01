@@ -62,6 +62,7 @@ void nodeDestroy(Node *node) {
     if(node != NULL) {
         nodeDestroy(node->left);
         nodeDestroy(node->right);
+        destroyObject(node->obj);
         free(node);
     }
 }
