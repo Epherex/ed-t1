@@ -27,8 +27,9 @@ bool processGeometry(FILE *entryFile, FILE *outputFile, FILE *outputQryFile, Bin
             sscanf(buffer + 2, "%d %lf %lf %lf %s %s", &i, &radius, &x, &y, color1, color2);
             Object *o = createCircle(i, radius, x, y, color1, color2);
             if(treeInsert(objectTree, o) == false) {
+                #ifdef __DEBUG__
                 printf("Erro: Número máximo de elementos ultrapassado!\n");
-                return false;
+                #endif
             }
             putSVGCircle(outputFile, (Circle *) o->content, color1, color2);
             if(outputQryFile != NULL)
@@ -40,8 +41,9 @@ bool processGeometry(FILE *entryFile, FILE *outputFile, FILE *outputQryFile, Bin
             sscanf(buffer + 2, "%d %lf %lf %lf %lf %s %s", &i, &width, &height, &x, &y, color1, color2);
             Object *o = createRectangle(i, width, height, x, y, color1, color2);
             if(treeInsert(objectTree, o) == false) {
+                #ifdef __DEBUG__
                 printf("Erro: Número máximo de elementos ultrapassado!\n");
-                return false;
+                #endif
             }
             putSVGRectangle(outputFile, (Rectangle *) o->content, color1, color2);
             if(outputQryFile != NULL)
@@ -51,12 +53,11 @@ bool processGeometry(FILE *entryFile, FILE *outputFile, FILE *outputQryFile, Bin
             char text[128];
             sscanf(buffer + 2, "%lf %lf %128[^\n]", &x, &y, text);
             putSVGText(outputFile, x, y, text);
-            if(outputQryFile != NULL)
-                putSVGText(outputQryFile, x, y, text);
+            //if(outputQryFile != NULL)
+            //    putSVGText(outputQryFile, x, y, text);
         }
     }
     putSVGEnd(outputFile);
-
     return true;
 }
 
@@ -89,10 +90,14 @@ bool processQuery(FILE *queryFile, FILE *outputFile, FILE *txtFile, BinaryTree *
         char type[16];
         sscanf(buffer, "%15s", type);
         if(strcmp(type, "o?") == 0) {
-            fputs(buffer, txtFile);
             int idA, idB;
             sscanf(buffer + 3, "%d %d", &idA, &idB);
             Object *a = treeFind(objectTree, idA), *b = treeFind(objectTree, idB);
+            if(a == NULL || b == NULL) {
+                printf("Erro: Elemento não encontrado!\n");
+                return false;
+            }
+            fputs(buffer, txtFile);
             bool overlaps = checkOverlap(a, b);
             if(overlaps) {
                 fprintf(txtFile, "SIM\n\n");
@@ -109,11 +114,15 @@ bool processQuery(FILE *queryFile, FILE *outputFile, FILE *txtFile, BinaryTree *
             double maxY = rectA.y + rectA.height < rectB.y + rectB.height ? rectB.y + rectB.height : rectA.y + rectA.height;
             putSVGBox(outputFile, minX, minY, maxX - minX, maxY - minY, !overlaps);
         } else if(strcmp(type, "i?") == 0) {
-            fputs(buffer, txtFile);
             int id;
             double x, y;
             sscanf(buffer + 3, "%d %lf %lf", &id, &x, &y);
             Object* o = treeFind(objectTree, id);
+            if(o == NULL) {
+                printf("Erro: Elemento não encontrado!\n");
+                return false;
+            }
+            fputs(buffer, txtFile);
             bool inside = checkInside(o, x, y);
             if(inside) {
                 fprintf(txtFile, "INTERNO\n\n");
@@ -125,13 +134,18 @@ bool processQuery(FILE *queryFile, FILE *outputFile, FILE *txtFile, BinaryTree *
             putSVGLine(outputFile, centerX, centerY, x, y);
             putSVGPoint(outputFile, x, y, inside);
         } else if(strcmp(type, "d?") == 0) {
-            fputs(buffer, txtFile);
             int j, k;
             sscanf(buffer + 3, "%d %d", &j, &k);
             double c1x, c1y, c2x, c2y;
-            getCenter(treeFind(objectTree, j), &c1x, &c1y);
-            getCenter(treeFind(objectTree, k), &c2x, &c2y);
+            Object *a = treeFind(objectTree, j), *b = treeFind(objectTree, k);
+            if(a == NULL || b == NULL) {
+                printf("Erro: Elemento não encontrado!\n");
+                return false;
+            }
+            getCenter(a, &c1x, &c1y);
+            getCenter(b, &c2x, &c2y);
             double dist = calculateDistance(c1x, c1y, c2x, c2y);
+            fputs(buffer, txtFile);
             fprintf(txtFile, "%lf\n\n", dist);
             putSVGLine(outputFile, c1x, c1y, c2x, c2y);
             char distText[16];

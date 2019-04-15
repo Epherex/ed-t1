@@ -48,7 +48,7 @@ void putSVGBox(FILE *file, double x, double y, double width, double height, bool
             width,
             height,
             STROKE_WIDTH,
-            gaps ? "2" : "0");
+            gaps ? "5" : "0");
 }
 
 void putSVGPoint(FILE *file, double x, double y, bool inside) {

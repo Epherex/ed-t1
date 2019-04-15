@@ -14,7 +14,7 @@ typedef struct Object {
     void *content;
     ObjectType type;
     int id;
-    char color1[16], color2[16];
+    char color1[24], color2[24];
 } Object;
 
 typedef struct Circle {

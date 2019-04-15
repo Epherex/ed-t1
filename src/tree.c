@@ -1,9 +1,6 @@
 #include "tree.h"
 
 bool treeInsert(BinaryTree *tree, Object *obj) {
-    if(tree->numElements >= tree->numMax) {
-        return false;
-    }
     tree->numElements++;
     Node *newNode = malloc(sizeof(Node));
     newNode->left = NULL;
@@ -15,11 +12,21 @@ bool treeInsert(BinaryTree *tree, Object *obj) {
         Node *current = tree->top;
         Node *previous = NULL;
         while(current != NULL) {
-            previous = current;
             if(obj->id > current->obj->id) {
+                previous = current;
                 current = current->right;
-            } else {
+            } else if(obj->id < current->obj->id) {
+                previous = current;
                 current = current->left;
+            } else {
+                newNode->right = current->right;
+                newNode->left = current->left;
+                if(current == tree->top) {
+                    tree->top = newNode;
+                }
+                destroyObject(current->obj);
+                free(current);
+                break;
             }
         }
         if(obj->id > previous->obj->id) {
@@ -28,7 +35,7 @@ bool treeInsert(BinaryTree *tree, Object *obj) {
             previous->left = newNode;
         }
     }
-    return true;
+    return tree->numElements <= tree->numMax;
 }
 
 Object *treeFind(BinaryTree *tree, int id) {

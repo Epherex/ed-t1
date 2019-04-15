@@ -31,7 +31,8 @@ void removeExtension(char *filePath) {
     while(index >= 0 && filePath[index] != '.')
         index--;
     
-    filePath[index] = '\0';
+    if(index >= 0)
+        filePath[index] = '\0';
 }
 
 void changeExtension(char *filePath, char *newExtension) {
